@@ -13,6 +13,6 @@ class get_weather(Tool):
     _FAKE_DATA = {"北京": ("晴", 28), "上海": ("小雨", 24), "广州": ("多云", 31)}
     def execute(self,city:str)->ToolResult:
         if city not in self._FAKE_DATA:
-            return ToolResult(content="没有目标城市",is_error=True)
+            return ToolResult(content=f"没有{city}的天气情况",is_error=True)
         weather,temp=self._FAKE_DATA[city]
         return ToolResult(content=f"{city}今天的天气是{weather},温度是{temp}")

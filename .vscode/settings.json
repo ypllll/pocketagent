@@ -1,4 +1,9 @@
 {
+    "python.defaultInterpreterPath": "C:\\Users\\siuuu\\miniconda3\\envs\\ai_env\\python.exe",
     "python-envs.defaultEnvManager": "ms-python.python:conda",
-    "python-envs.defaultPackageManager": "ms-python.python:conda"
+    "python-envs.defaultPackageManager": "ms-python.python:conda",
+    "python.terminal.activateEnvironment": true,
+    "terminal.integrated.env.windows": {
+        "PATH": "C:\\Users\\siuuu\\miniconda3\\envs\\ai_env;C:\\Users\\siuuu\\miniconda3\\envs\\ai_env\\Scripts;${env:PATH}"
+    }
 }
