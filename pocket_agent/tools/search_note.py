@@ -20,7 +20,7 @@ class search_note(Tool):
     ]
     def execute(self, query:str,top_s:int=2):
         lines=[note for note in self._NOTES if query in note]
-        if lines is None:
+        if not lines:
             return ToolResult(content="没有找到与检索词符合的内容")
         return ToolResult(content="\n".join(lines[:top_s]))
         
