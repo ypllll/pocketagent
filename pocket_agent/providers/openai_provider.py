@@ -16,7 +16,7 @@ def message_to_api_dict(message:Message)->dict:
                 "type":"function",
                 "function":{
                     "name":tool_call.name,
-                    "arguments":json.dumps(tool_call.arguments,ascii=False)
+                    "arguments":json.dumps(tool_call.arguments,ensure_ascii=False)
                 }
             })
     if message.role=="tool":

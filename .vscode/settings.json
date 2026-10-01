@@ -5,5 +5,12 @@
     "python.terminal.activateEnvironment": true,
     "terminal.integrated.env.windows": {
         "PATH": "C:\\Users\\siuuu\\miniconda3\\envs\\ai_env;C:\\Users\\siuuu\\miniconda3\\envs\\ai_env\\Scripts;${env:PATH}"
-    }
+    },
+    "python-envs.pythonProjects": [
+        {
+            "path": "pocket_agent/check_real.py",
+            "envManager": "ms-python.python:conda",
+            "packageManager": "ms-python.python:conda"
+        }
+    ]
 }

@@ -17,7 +17,7 @@ class AgentRuntime:
                 response=self.provider.chat(messages,self.tools.definitions())
             except Exception as e:
                 return Runresult(
-                    answer="模型调用失败,失败原因是：{e}",
+                    answer=f"模型调用失败,失败原因是：{e}",
                     stop_reason="error",
                     message=messages
                 )
