@@ -24,6 +24,9 @@ def message_to_api_dict(message:Message)->dict:
     return api_message
 
 class OpenaiProvider(Provider):
+    @property
+    def name(self)->str:
+        return self.model
     def __init__(self,model:str,api_key:str,base_url:str):
         self.model=model
         self.client=OpenAI(api_key=api_key,base_url=base_url)

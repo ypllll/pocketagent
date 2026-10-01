@@ -16,3 +16,10 @@ print("停止原因：",result.stop_reason)
 print("消息记录：")
 for message in result.message:
     print(f"{message.role:<9}: {str(message.content)[:50]}")
+print("调用轨迹：")
+for trace in result.trace:
+    print(
+        f"step:{trace.step:<2} kind:{trace.kind:<8} name:{trace.name:<15} elapsed_ms:{trace.elapsed_ms:>5}ms"
+        +("   [ERROR]" if trace.is_error else "")
+        +(f"   detail:{trace.detail}" if trace.detail else "")
+    )
