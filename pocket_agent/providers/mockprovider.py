@@ -1,6 +1,9 @@
 from pocket_agent.providers.base import Provider
 from pocket_agent.models import Message,LLMResponse
 class MockProvider(Provider):
+    @property
+    def name(self)->str:
+        return "MockProvider"
     def __init__(self,responses:list[LLMResponse],fallback:LLMResponse|None=None):
         self._responses=list(responses)
         self._fallback=fallback
