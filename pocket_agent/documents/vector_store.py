@@ -34,7 +34,7 @@ class Vector_store:
         )
         return len(chunks) 
 
-    def search(self,query:str,top_k:int=5)->list[dict]:
+    def search(self,query:str,top_k:int=10)->list[dict]:
         if not query:
             return []
         query_vector=self.embedder.embed([query])
