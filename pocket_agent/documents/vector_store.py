@@ -30,7 +30,7 @@ class Vector_store:
             ids=ids,
             embeddings=vectors,
             metadatas=metadatas,
-            documens=texts
+            documents=texts
         )
         return len(chunks) 
 
