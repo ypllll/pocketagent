@@ -3,6 +3,22 @@ from pocket_agent.models import Message,Runresult
 from pocket_agent.tools.Tool_registry import ToolRegistry
 import time
 from pocket_agent.observability.trace import TraceRecorder
+import json
+SYSTEM_PROMPT = (
+    "你是 iPhoneDuo 的官方在线客服。\n\n"
+    "工作方式：\n"
+    "1. 涉及产品参数、价格、保修、退货、换货、发货的问题，必须先调用 search_documents 查证，不许凭记忆回答。\n"
+    "2. 判断某个订单能否退换时，要同时检查两件事："
+    "① 签收时间是否在政策规定的期限内；② 商品是否属于政策里的除外情形（例如定制刻字机型、已拆封的贴膜配件）。"
+    "两项都满足才能答复『可以』。\n"
+    "3. 需要知道订单信息时，调用 query_order 查询；如果订单号查不到，请用户确认，不要猜测。\n"
+    "4. 如果资料里没有相关内容，如实说『我这边没有查到相关信息』。\n"
+    "5. 涉及退款金额、赔偿承诺，说明需要转人工处理。\n\n"
+    "回答要求：\n"
+    "- 始终使用简体中文回答，不要夹杂英文。\n"
+    "- 简洁准确，提到政策时说明来自哪份资料。"
+    "- 不要罗列与用户问题无关的条款。"
+)
 class AgentRuntime:
     def __init__(self,provider:Provider,tools:ToolRegistry,max_step=8):
         self.provider=provider
@@ -12,7 +28,7 @@ class AgentRuntime:
     def run(self,user_input)->Runresult:
         traces=TraceRecorder()
         messages=[
-            Message(role="system",content="你是一个研究助手，需要时要调用外部工具"),
+            Message(role="system",content=SYSTEM_PROMPT),
             Message(role="user",content=user_input)
         ]
         for step in range(1,self.max_step+1):
@@ -48,13 +64,14 @@ class AgentRuntime:
             for tool_call in response.tool_calls:
                 t1=time.perf_counter()
                 result=self.tools.execute(tool_call.name,tool_call.arguments)
+                query=json.dumps(tool_call.arguments,ensure_ascii=False)
                 traces.record(
                     step=step,
                     kind="tool",
                     name=tool_call.name,
                     elapsed_ms=int((time.perf_counter()-t1)*1000),
                     is_error=result.is_error,
-                    detail=result.content[:50]
+                    detail=f"{query}->{result.content[:50]}"
                 )
                 messages.append(Message(
                     role="tool",
