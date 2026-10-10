@@ -58,6 +58,7 @@
         Message(role="system", content=SYSTEM_PROMPT),
         Message(role="user", content=user_input),
     ]
+```
     systemprompt很关键，因为当你开发某个具体领域的agent时，写好systemprompt，就是定好了他的角色和边界，例如下次我想做一个金融分析agent，那我就要重写一套systemprompt，就是给agent换一个人设。然后就正式进入循环了，这里很关键的一点是要定一个max_step，也就是最大循环次数，防止agent无限次循环下去，在这里我定的max_step是8。
 
     ###第二步就到了调用模型了，我在providers这个module里面已经写好了一个openai的接口，因为我打算调的是deepseek的api，他兼容openai的接口规范，然后这个接口文件我命名为openai_provider.py，这个接口的作用就是把大模型传回来的信息整理好，存到我在model这个module里面定义的一个数据结构叫做LLMresponse，我的LLMresponse如下：
@@ -75,6 +76,7 @@
             if self.finish_reason not in["tool_calls","function_call","stop"]:
                 return False
             return True
+```
     就是把大模型返回的那些json数据里面的content，tool_calls等等信息提取出来，放到我的这个LLMresponse的数据容器里面。当然我这个provider还有其他的作用，就是把我内部的Messgae对象转成API认识的dict格式
 
     ###第三步是记录这一步，也就是trace，调用大模型如果不记录的话，将来测试这个agent的时候，可观测性就会很差，就是说不写trace的话，你就只能看到问题和答案，中间发生什么你完全不知道，比如说有时工具失败了但模型依旧回答的很好，这样错误就会被掩盖。不过我目前的trace功能还是比较简陋的，只记录了：
@@ -89,6 +91,7 @@
                 content=response.content,
                 tool_calls=response.tool_calls
             ))"""
+```
     也就是把大模型回答的信息保存到我的Message数据结构里面然后再追加到总历史messages里面
     Message数据容器如下：
     """@dataclass
@@ -107,6 +110,7 @@
         stop_reason:str#completed,error,timeout
         message:list[Message]
         trace:list[TraceStep]=field(default_factory=list)
+```
     这个数据容器会记录最终返回给用户的回答，结束原因和总历史，以及每次的trace。
 
     ###第六步就是执行工具，如果在上一步判断出来有tool_call，那么就需要执行工具。执行工具的代码是：
@@ -124,6 +128,7 @@
                     content=result.content,
                     tool_call_id=tool_call.id
                 ))
+```
     这个tool_call_id其实挺重要的，因为模型一次可能会返回多个工具的，所以需要一个编号让他们彼此对应。
 
     ###ok最后一步就是要有一个步数用尽的兜底：
@@ -134,6 +139,7 @@
             message=messages,
             trace=traces.steps
         )
+```
     因为如果没有这个兜底的话，循环结束后就会返回None，用户就什么都收不到了
     ok，这大概就是我这个项目的大概了，不过其中还有很多实现细节被封装起来了，不过下面我还想展示我在这个项目中用到的一个很重要的技术————RAG
 
