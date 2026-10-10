@@ -52,16 +52,16 @@
     不过有些东西，我认为是只有亲手写过，亲手debug过才会理解的更深刻：
     我在这里还是想写一下整个loop的流程吧，因为其实我的pocketagent有这么多模块，他们都被封装好了，最终不过都是在loop这里外显了，所以呢，讲通我这个loop的流程，其实也就讲通了我的整个项目。
 
-    ###首先呢，就是先组装最初的消息，也就是systemprompt和用户输入：
+###首先呢，就是先组装最初的消息，也就是systemprompt和用户输入：
 ```python
     messages = [
         Message(role="system", content=SYSTEM_PROMPT),
         Message(role="user", content=user_input),
     ]
 ```
-    systemprompt很关键，因为当你开发某个具体领域的agent时，写好systemprompt，就是定好了他的角色和边界，例如下次我想做一个金融分析agent，那我就要重写一套systemprompt，就是给agent换一个人设。然后就正式进入循环了，这里很关键的一点是要定一个max_step，也就是最大循环次数，防止agent无限次循环下去，在这里我定的max_step是8。
+systemprompt很关键，因为当你开发某个具体领域的agent时，写好systemprompt，就是定好了他的角色和边界，例如下次我想做一个金融分析agent，那我就要重写一套systemprompt，就是给agent换一个人设。然后就正式进入循环了，这里很关键的一点是要定一个max_step，也就是最大循环次数，防止agent无限次循环下去，在这里我定的max_step是8。
 
-    ###第二步就到了调用模型了，我在providers这个module里面已经写好了一个openai的接口，因为我打算调的是deepseek的api，他兼容openai的接口规范，然后这个接口文件我命名为openai_provider.py，这个接口的作用就是把大模型传回来的信息整理好，存到我在model这个module里面定义的一个数据结构叫做LLMresponse，我的LLMresponse如下：
+###第二步就到了调用模型了，我在providers这个module里面已经写好了一个openai的接口，因为我打算调的是deepseek的api，他兼容openai的接口规范，然后这个接口文件我命名为openai_provider.py，这个接口的作用就是把大模型传回来的信息整理好，存到我在model这个module里面定义的一个数据结构叫做LLMresponse，我的LLMresponse如下：
 ```
     @dataclass
     class LLMResponse:
@@ -77,14 +77,14 @@
                 return False
             return True
 ```
-    就是把大模型返回的那些json数据里面的content，tool_calls等等信息提取出来，放到我的这个LLMresponse的数据容器里面。当然我这个provider还有其他的作用，就是把我内部的Messgae对象转成API认识的dict格式
+就是把大模型返回的那些json数据里面的content，tool_calls等等信息提取出来，放到我的这个LLMresponse的数据容器里面。当然我这个provider还有其他的作用，就是把我内部的Messgae对象转成API认识的dict格式
 
-    ###第三步是记录这一步，也就是trace，调用大模型如果不记录的话，将来测试这个agent的时候，可观测性就会很差，就是说不写trace的话，你就只能看到问题和答案，中间发生什么你完全不知道，比如说有时工具失败了但模型依旧回答的很好，这样错误就会被掩盖。不过我目前的trace功能还是比较简陋的，只记录了：
+###第三步是记录这一步，也就是trace，调用大模型如果不记录的话，将来测试这个agent的时候，可观测性就会很差，就是说不写trace的话，你就只能看到问题和答案，中间发生什么你完全不知道，比如说有时工具失败了但模型依旧回答的很好，这样错误就会被掩盖。不过我目前的trace功能还是比较简陋的，只记录了：
     模型调用方面：这是第几轮，用的哪个模型，耗时多少以及模型为什么停下
     工具调用方面：这是第几轮，用了哪个工具，耗时多少，传入的参数以及返回结果
     但是还不能记录token的消耗，发给模型的完整上下文。
 
-    ###第四步是把模型回答加进历史，我的总历史是在一个命名为messages的列表里面：
+###第四步是把模型回答加进历史，我的总历史是在一个命名为messages的列表里面：
 ```
     messages.append(Message(
                 role="assistant",
@@ -92,17 +92,19 @@
                 tool_calls=response.tool_calls
             ))"""
 ```
-    也就是把大模型回答的信息保存到我的Message数据结构里面然后再追加到总历史messages里面
-    Message数据容器如下：
-    """@dataclass
+也就是把大模型回答的信息保存到我的Message数据结构里面然后再追加到总历史messages里面
+Message数据容器如下：
+```
+    @dataclass
     class Message:
         role:str
         content:str|None=None
         tool_calls:list[ToolCall]=field(default_factory=list)
         tool_call_id:str|None=None
+```
     里面存放的信息有对象，内容，工具调用信息和对应的序号。
 
-    ###第五步就是判断要不要调用工具，这也是结束条件之一，然后我的LLMresponse这个数据容器里面有一个方法是（should_execute_tools），这个方法就是专门用来判断是否要调用工具的。如果不用调用工具，那就直接return Runresult，Runresult也是我写在models这个module的一个数据容器，Runresult数据容器如下：
+###第五步就是判断要不要调用工具，这也是结束条件之一，然后我的LLMresponse这个数据容器里面有一个方法是（should_execute_tools），这个方法就是专门用来判断是否要调用工具的。如果不用调用工具，那就直接return Runresult，Runresult也是我写在models这个module的一个数据容器，Runresult数据容器如下：
 ```
     @dataclass
     class Runresult:
@@ -111,17 +113,19 @@
         message:list[Message]
         trace:list[TraceStep]=field(default_factory=list)
 ```
-    这个数据容器会记录最终返回给用户的回答，结束原因和总历史，以及每次的trace。
+这个数据容器会记录最终返回给用户的回答，结束原因和总历史，以及每次的trace。
 
-    ###第六步就是执行工具，如果在上一步判断出来有tool_call，那么就需要执行工具。执行工具的代码是：
+###第六步就是执行工具，如果在上一步判断出来有tool_call，那么就需要执行工具。执行工具的代码是：
+```
     result = self.tools.execute(tool_call.name, tool_call.arguments)
-    不过这个execute方法是在ToolRegistry里面的，也就是一个工具表，所以说，在具体实现的过程中，我的工具是在更里面一层，直接出现在loop里面的是我的工具表，我要先把我的tools注册到工具表里面。然后execute这个方法具体就是检查大模型传回来的工具，大模型可能回传回来多个工具的，所以这里也用了for循环，具体检查的有三道关卡：
+```
+不过这个execute方法是在ToolRegistry里面的，也就是一个工具表，所以说，在具体实现的过程中，我的工具是在更里面一层，直接出现在loop里面的是我的工具表，我要先把我的tools注册到工具表里面。然后execute这个方法具体就是检查大模型传回来的工具，大模型可能回传回来多个工具的，所以这里也用了for循环，具体检查的有三道关卡：
     1.工具存在吗（模型是有幻觉的，他可能会传回来一个不在我的工具表里面的工具）
     2.传入工具的参数合法吗（这个具体实现就是在工具的父类里面了，在tools文件夹里面的base文件，里面的validate方法就是具体实现怎么检查传入工具是否合法的）
     3.执行时报错吗（用try/except兜住，防止直接报错）
     ToolRegistry还有一个重要的作用就是把所有工具的schema拼成一个数组
 
-    ###第七步是把工具结果回填，当然再次之前还要记录工具调用的trace，不过这个我在上面的模型调用时已经一起说明了，回填的具体代码是：
+###第七步是把工具结果回填，当然再次之前还要记录工具调用的trace，不过这个我在上面的模型调用时已经一起说明了，回填的具体代码是：
 ```
     messages.append(Message(
                     role="tool",
@@ -129,9 +133,9 @@
                     tool_call_id=tool_call.id
                 ))
 ```
-    这个tool_call_id其实挺重要的，因为模型一次可能会返回多个工具的，所以需要一个编号让他们彼此对应。
+这个tool_call_id其实挺重要的，因为模型一次可能会返回多个工具的，所以需要一个编号让他们彼此对应。
 
-    ###ok最后一步就是要有一个步数用尽的兜底：
+###ok最后一步就是要有一个步数用尽的兜底：
 ```
     return Runresult(
             answer="步数用尽，没能在规定循环内完成任务",
@@ -140,8 +144,8 @@
             trace=traces.steps
         )
 ```
-    因为如果没有这个兜底的话，循环结束后就会返回None，用户就什么都收不到了
-    ok，这大概就是我这个项目的大概了，不过其中还有很多实现细节被封装起来了，不过下面我还想展示我在这个项目中用到的一个很重要的技术————RAG
+因为如果没有这个兜底的话，循环结束后就会返回None，用户就什么都收不到了
+ok，这大概就是我这个项目的大概了，不过其中还有很多实现细节被封装起来了，不过下面我还想展示我在这个项目中用到的一个很重要的技术————RAG
 
 3.对RAG的理解
     3.1.RAG的完整流程
