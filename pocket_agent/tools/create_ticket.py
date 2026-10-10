@@ -30,9 +30,9 @@ class create_ticket(Tool):
         "required": ["issue"],
     }
 
-    def __init__(self,path:str):
-        self.path=path
-        conn=sqlite3.connect(path)
+    def __init__(self,db_path:str):
+        self.path=db_path
+        conn=sqlite3.connect(db_path)
         conn.execute("""
             CREATE TABLE IF NOT EXISTS tickets (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,

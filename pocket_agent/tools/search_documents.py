@@ -29,6 +29,8 @@ class search_documents(Tool):
             return ToolResult(content=f"没有找到与{query}相关的资料")
         blocks=[]
         for i,r in enumerate(result,1):
-            blocks.append(f"第{i}条资料:\n{r['text']}\n来源:{r['source']}")
+            blocks.append(
+                f"[资料{i}] 来源：{r['source']} 第{r['index']}块\n{r['text']}"
+            )
         return ToolResult(content="\n\n".join(blocks))
         

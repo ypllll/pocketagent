@@ -73,7 +73,7 @@ class AgentRuntime:
                     name=tool_call.name,
                     elapsed_ms=int((time.perf_counter()-t1)*1000),
                     is_error=result.is_error,
-                    detail=f"{query}->{result.content[:50]}"
+                    detail=f"{query}->{result.content[:120]}"
                 )
                 messages.append(Message(
                     role="tool",
